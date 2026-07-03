@@ -353,7 +353,7 @@ async function uiBid() {
   const v = visibleState(game);
   const pm = v.staff.filter((s) => s.role === "PM").length;
   sheet(`<h3>📋 接案</h3><p class="sub">投標後才會揭曉流出的是哪種案型（隨機），擲骰定生死。</p>
-    <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px">目前 ${pm} 個 PM 扛 ${v.cases.length} 案（上限 ${pm * CONFIG.max_cases_per_pm}）。案子越多、對手越多，標越難搶。</div>
+    <div style="font-size:13.5px;color:var(--ink-soft);margin-bottom:10px">目前 ${pm} 個 PM 扛 ${v.cases.length} 案（上限 ${pm * CONFIG.max_cases_per_pm}）。案子越多、對手越多，標越難搶。</div>
     <button class="opt" id="goBid">投標<small>吃 1 行動點·流標倒賠一點投標成本</small></button>
     <button class="opt dismiss" id="noBid">再想想</button>`);
   document.getElementById("goBid").onclick = () => doAction(() => actionBid(game));
@@ -440,7 +440,7 @@ async function uiHand() {
   if (v.cardsPlayed >= v.cardsPerSeason) return toast(`本季手牌已出滿 ${v.cardsPerSeason} 張了。`);
   const KIND_SUB = { blame: "甩鍋卡：拆彈但養稽核（賭）", junk: "士氣 +3，聊勝於無" };
   const idx = await pickSheet(
-    `🃏 手牌 <span style="font-size:11px;color:var(--ink-soft)">${v.cardsPlayed}/${v.cardsPerSeason}·免行動點</span>`,
+    `🃏 手牌 <span style="font-size:13px;color:var(--ink-soft)">${v.cardsPlayed}/${v.cardsPerSeason}·免行動點</span>`,
     "點一張打出",
     v.hand.map((c, i) => ({ html: `【${c.name}】<small>${KIND_SUB[c.kind] || ""}</small>`, value: i }))
   );
