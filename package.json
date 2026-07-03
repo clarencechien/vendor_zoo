@@ -1,5 +1,8 @@
 {
   "name": "vendor-zoo",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "sharp": "^0.35.3"
+  }
 }

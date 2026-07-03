@@ -149,6 +149,8 @@ export function visibleState(g) {
     mode: g.mode, season: g.season, seasonsToSurvive: CONFIG.seasons_to_survive,
     cash: g.cash, actionsLeft: g.actionsLeft,
     morale: g.morale,
+    // 質性信譽（不給數字，迷霧友善）：甩鍋還唬不唬得動的「感覺」
+    repFeel: g.reputation >= 60 ? "尚可" : g.reputation >= 40 ? "有點臭" : "臭掉了",
     moraleHearts: clamp(Math.round(g.morale / RULES.moraleBar.per_heart), 0, RULES.moraleBar.hearts),
     auditWind,
     staff: g.staff.map((s) => ({ role: s.role, name: s.name, stat: s.stat })),
@@ -156,7 +158,10 @@ export function visibleState(g) {
       id: c.id, atype: c.atype, name: c.name, client: c.client,
       light: caseLight(c), note: ARCH[c.atype].note,
       subcontracted: c.subcontracted, inherited: c.inherited, lockin: c.lockin,
+      // 榨錢冷卻是玩家嘗試時就會被告知的資訊，先顯示省一次白跑
+      upsellCooldown: g.season - c.lastUpsell < CONFIG.upsell_cooldown,
     })),
+    hireRescue: !salesOf(g).length && g.cash < RULES.hire.rescue_hire_cash_below,
     rivals: g.rivals.map((r) => ({
       name: r.name, alive: r.alive, hpBar: clamp(r.hp, 0, 100), // 絕對刻度 0-100，同 Python bar()
     })),
