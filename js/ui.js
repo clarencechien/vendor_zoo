@@ -62,10 +62,10 @@ export function render(v) {
   $("ccount").textContent = `(${v.cases.length})`;
   const L = { green: "lg", yellow: "ly", red: "lr" };
   $("cscroll").innerHTML = v.cases.length
-    ? v.cases.map((c) => {
-        const note = c.inherited ? "接盤" : c.subcontracted ? "下包" : "自做";
-        return `<div class="ccard" data-case="${c.id}"><span class="clight ${L[c.light]}"></span><img src="${IMG.caseIco(CASE_ICO[c.atype])}"><div class="cnm">${esc(c.name)}${c.lockin ? "🔒" : ""}</div><div class="ctype">${esc(c.atype)}·${note}</div></div>`;
-      }).join("")
+    ? v.cases.map((c) =>
+        // 外層只留：燈號 + icon + 名稱（案型/下包/接盤移進詳情卡）；接盤案標記留在角落
+        `<div class="ccard" data-case="${c.id}"><span class="clight ${L[c.light]}"></span>${c.inherited ? '<span class="cflag">接盤</span>' : ""}<img src="${IMG.caseIco(CASE_ICO[c.atype])}"><div class="cnm">${esc(c.name)}${c.lockin ? "🔒" : ""}</div></div>`
+      ).join("")
     : `<div style="font-size:13px;color:var(--ink-soft);padding:8px 2px">（目前手上沒案子——去搶標吧）</div>`;
 
   // 員工立繪：預設坐姿（辦公室日常感、比例最穩）；士氣崩到谷底才 orz
@@ -198,7 +198,7 @@ export function rivalPop(ev, v, idx) {
   ev.stopPropagation();
   const r = v.rivals[idx];
   const p = $("pop");
-  const hp = r.alive ? `戰力約 <em>${r.hpBar}%</em>（只見血條）` : `<em>已倒閉</em>`;
+  const hp = r.alive ? `戰力約 <em>${r.hpBar}%</em>` : `<em>已倒閉</em>`;
   p.innerHTML = `<h4 style="display:flex;align-items:center;gap:6px"><img src="${IMG.rival(RIVAL_LOGO_KEY[r.name])}" style="width:26px;height:26px">${esc(r.name)}</h4><div>${esc(RIVAL_INTRO[r.name] || "")}</div><div style="margin-top:6px;font-size:12px;color:var(--ink-soft)">${hp}</div>`;
   const c = ev.currentTarget.getBoundingClientRect();
   p.style.left = Math.min(c.left, innerWidth - 250) + "px";
@@ -234,7 +234,7 @@ export function caseDetail(v, id, opts = {}) {
 // ---- 情報面板 ----
 export function intelPanel(v) {
   const smoky = v.cases.filter((c) => c.light !== "green").length;
-  sheet(`<h3>情報面板</h3><p class="sub">只給感覺不給數字</p>
+  sheet(`<h3>情報面板</h3>
     <div style="font-size:15px;line-height:1.9">⚖️ 稽核風聲：<b style="color:var(--coral)">${esc(v.auditWind)}</b><br>
     📉 信譽：<b style="color:var(--navy)">${esc(v.repFeel)}</b>${v.repFeel === "尚可" ? "，甩鍋還唬得動" : "，甩鍋越來越難唬"}<br>
     🕳️ 有 <b style="color:var(--bad)">${smoky}</b> 張案子在冒煙，記得查核<br>
