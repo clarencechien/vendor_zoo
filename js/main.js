@@ -25,6 +25,53 @@ let busy = false;
 let endPhase = null; // 行動階段的結束 resolver
 const deferred = {}; // 決策 modal 要用的旁白文字（season.explode / event.ransom）
 
+// ---------- 偵錯系統：卡住/炸掉時看得到為什麼 ----------
+// 錯誤環形緩衝 + localStorage 持久化 + 戰報抽屜「🐞 匯出偵錯」一鍵帶走
+const dbgErrors = [];
+function recordErr(msg) {
+  const entry = { ts: new Date().toISOString(), season: game?.season, msg: String(msg).slice(0, 4000) };
+  dbgErrors.push(entry);
+  while (dbgErrors.length > 30) dbgErrors.shift();
+  try { localStorage.setItem("vz_debug_errors", JSON.stringify(dbgErrors)); } catch {}
+  try { logLine("🐞", `發生錯誤：${entry.msg.split("\n")[0]}`, "戰報→匯出偵錯 可帶走完整紀錄"); } catch {}
+  try { toast("🐞 出錯了——戰報裡有「匯出偵錯」可回報", 3000); } catch {}
+}
+window.addEventListener("error", (e) => recordErr(`${e.message}\n${e.error?.stack || `${e.filename}:${e.lineno}`}`));
+window.addEventListener("unhandledrejection", (e) => recordErr(`unhandledrejection: ${e.reason?.stack || e.reason}`));
+
+function debugDump() {
+  let state = null;
+  try {
+    // rng(閉包)與 log(另附尾段)拿掉，其餘完整快照——偵錯用，含隱藏數字
+    const { rng, log, ...rest } = game || {};
+    state = JSON.parse(JSON.stringify(rest));
+  } catch (e) { state = "state 序列化失敗: " + e; }
+  return JSON.stringify({
+    when: new Date().toISOString(),
+    ua: navigator.userAgent,
+    seed: game?.rng?.seed, mode: game?.mode, season: game?.season,
+    hint: `用 ?seed=${game?.rng?.seed} 可重現這一局的隨機序`,
+    errors: dbgErrors,
+    prevSessionErrors: (() => { try { return JSON.parse(localStorage.getItem("vz_debug_errors") || "[]"); } catch { return []; } })(),
+    ui: { busy, actionPhase: !!endPhase, logCursor },
+    state,
+    recentLog: (game?.log || []).slice(-80),
+  }, null, 1);
+}
+async function exportDebug() {
+  const dump = debugDump();
+  let copied = false;
+  try { await navigator.clipboard.writeText(dump); copied = true; } catch {}
+  try {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([dump], { type: "application/json" }));
+    a.download = `vendorzoo-debug-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  } catch {}
+  toast(copied ? "偵錯內容已複製到剪貼簿（也下載了一份 json）" : "已下載偵錯 json", 2600);
+}
+
 // ---------- 引擎 sys.* 事件的備援文案（對齊 Python 的 print） ----------
 const SYS_TEXT = {
   "sys.roll": (v) => `🎲 ${v.label}：d20(${v.d})+${v.bonus}=${v.tot}（線${v.dc}）→ ${v.ok ? "成功" : "失敗"}${v.crit ? " ★大成功" : ""}${v.fumble ? " ☠大失敗" : ""}`,
@@ -379,6 +426,7 @@ async function uiHand() {
 
 async function uiEndSeason() {
   if (busy || !endPhase) return;
+  if (document.getElementById("scrim2").classList.contains("on")) return; // 有卡片開著時不疊確認卡
   const v = visibleState(game);
   if (v.actionsLeft > 0) {
     const go = await card({
@@ -404,16 +452,34 @@ function waitActionsPhase() {
 
 async function seasonLoop() {
   while (!game.gameOver && !game.wonEarly && game.season <= CONFIG.seasons_to_survive) {
-    beginSeason(game);
-    dockDisabled(true);
-    render(visibleState(game));
-    tick(`📰 <b>第 ${game.season} 季</b>開始，錢和人依然不夠用。`);
-    await runFlowUI(seasonStartFlow(game));
-    await waitActionsPhase();
-    dockDisabled(true);
-    await runFlowUI(seasonEndFlow(game));
-    game.season += 1;
-    render(visibleState(game));
+    try {
+      beginSeason(game);
+      dockDisabled(true);
+      render(visibleState(game));
+      tick(`📰 <b>第 ${game.season} 季</b>開始，錢和人依然不夠用。`);
+      await runFlowUI(seasonStartFlow(game));
+      await waitActionsPhase();
+      dockDisabled(true);
+      await runFlowUI(seasonEndFlow(game));
+      game.season += 1;
+      render(visibleState(game));
+    } catch (err) {
+      // 防當網：流程炸掉不再無聲卡死——記錄、給玩家選擇
+      recordErr(err?.stack || String(err));
+      endPhase = null;
+      logCursor = game.log.length; // 丟棄壞掉那段未演出的 log，避免重複觸雷
+      const act = await card({
+        tag: "💥 引擎打滑", title: "遊戲流程出錯了", emoji: "🐞",
+        body: `錯誤已記進偵錯紀錄（戰報 → 🐞 匯出偵錯，可複製回報）。\n\n${String(err).slice(0, 300)}`,
+        choices: [
+          { label: "硬著頭皮繼續", sub: "跳到下一季（狀態可能有點歪）", value: "next" },
+          { label: "重新整理", sub: "重開遊戲", value: "reload", dismiss: true },
+        ],
+      });
+      if (act === "reload") { location.reload(); return; }
+      game.season += 1;
+      render(visibleState(game));
+    }
   }
   await showEnding();
 }
@@ -470,6 +536,7 @@ async function boot() {
   // 靜態元件事件
   $("logBtn").onclick = () => $("logdraw").classList.toggle("on");
   $("logClose").onclick = () => $("logdraw").classList.remove("on");
+  $("dbgBtn").onclick = exportDebug;
   $("intelChip").onclick = () => intelPanel(visibleState(game));
   $("emp_eng").onclick = () => rosterSheet(visibleState(game), "工程師");
   $("emp_pm").onclick = () => rosterSheet(visibleState(game), "PM");
@@ -498,6 +565,7 @@ function startGame(mode) {
   narrator = makeNarrator();
   logCursor = 0;
   $("items").innerHTML = "";
+  logLine("🎲", `本局種子 seed=${game.rng.seed}（${mode}）`, `網址加 ?seed=${game.rng.seed} 可重現這一局`);
   render(visibleState(game));
   seasonLoop();
 }
