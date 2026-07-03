@@ -92,6 +92,7 @@ function mkCase(g, atype, subcontracted, sat, risk, inherited = false) {
     client: g.rng.choice(ARCH_CLIENTS[atype]),
     subcontracted, sat, risk,
     rebound: 0, lastUpsell: -9, inherited, lockin: false,
+    lastRecon: null, // 玩家上次查核讀數 {risk, sat, season}（玩家已知情報，非迷霧）
   };
 }
 
@@ -160,6 +161,7 @@ export function visibleState(g) {
       subcontracted: c.subcontracted, inherited: c.inherited, lockin: c.lockin,
       // 榨錢冷卻是玩家嘗試時就會被告知的資訊，先顯示省一次白跑
       upsellCooldown: g.season - c.lastUpsell < CONFIG.upsell_cooldown,
+      lastRecon: c.lastRecon, // 玩家花錢買到的讀數，留檔顯示
     })),
     hireRescue: !salesOf(g).length && g.cash < RULES.hire.rescue_hire_cash_below,
     rivals: g.rivals.map((r) => ({
@@ -380,6 +382,7 @@ export function actionRecon(g, caseId) {
   g.cash -= CONFIG.recon_cost;
   const nr = clamp(c.risk + g.rng.randint(-RULES.recon.noise, RULES.recon.noise), 0, 100);
   const ns = clamp(c.sat + g.rng.randint(-RULES.recon.noise, RULES.recon.noise), 0, 100);
+  c.lastRecon = { risk: nr, sat: ns, season: g.season };
   return {
     ok: true, apSpent: false,
     events: [emit(g, "sys.recon", { case: c.name, risk: nr, sat: ns })],
