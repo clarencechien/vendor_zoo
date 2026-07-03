@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-Hant"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Vendor Zoo 乙方動物園 — 黑色喜劇 IT 外包大逃殺</title>
+<meta name="theme-color" content="#241a0f">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="assets/icons/icon-192.png">
+<link rel="apple-touch-icon" href="assets/icons/icon-192.png">
+<style>
+/* 暖木色 + 米黃紙感面板 + 木牌按鈕（沿用 mockup_v10 定案視覺） */
+:root{
+ --wood:#7a5230;--wood-d:#4f3418;--wood-l:#9c6b3d;
+ --paper:#f3e2be;--paper-d:#e6cd97;--paper-line:#c9a86a;
+ --ink:#3b2a17;--ink-soft:#6b5636;--cream:#fff6e2;
+ --navy:#26406e;--teal:#1f8a7a;--gold:#f0b429;--coral:#e0532e;--good:#3a9d4e;--bad:#d23b32;--sky:#8fd0ff;
+ --frameW:#3a2513;
+}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{font-family:ui-monospace,"Noto Sans Mono CJK TC",monospace;background:#241a0f;color:var(--ink);font-size:14px;line-height:1.45;-webkit-tap-highlight-color:transparent;overflow:hidden}
+img{image-rendering:pixelated}
+.panel{background:linear-gradient(#f7e8c6,#eed7a6);border:4px solid var(--frameW);border-radius:7px;
+ box-shadow:inset 0 0 0 2px #fff7e0, inset 0 0 0 4px #c9a86a, 0 3px 0 #0004}
+.app{display:flex;flex-direction:column;height:100dvh;max-width:900px;margin:0 auto;background:radial-gradient(120% 60% at 50% 0%, #6a4a2a, #3f2a15);padding:6px;gap:6px}
+
+/* topbar + HUD */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:2px 10px 0;gap:10px}
+.tb-season{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:bold;color:#fff4d8;background:linear-gradient(#5a3f22,#3f2a15);border:2px solid #2a1a0c;border-radius:14px;padding:3px 12px;box-shadow:0 2px 0 #0005}
+.tb-season .mode{font-size:9px;color:#ffb38a}
+.tb-money{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:bold;color:#5a3f14}
+.tb-money b{color:#c8860f;font-size:20px;text-shadow:0 1px 0 #fff8,0 0 2px #ffec2799}
+.hud{padding:6px 10px}
+.hud .meters{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.meter{display:flex;align-items:center;gap:4px}.meter .name{font-size:10px;color:var(--ink-soft)}
+.iconrow{display:flex;gap:2px}
+.iconrow img{width:16px;height:16px}
+.iconrow img.off{opacity:.28;filter:grayscale(.8)}
+.hicon-sm{width:18px;height:18px;image-rendering:pixelated;vertical-align:middle}
+.chip{font-size:11px;color:#8a3a1a;border:2px solid var(--coral);border-radius:5px;padding:2px 8px;background:#ffe9d5;cursor:pointer;font-weight:bold;display:flex;align-items:center;gap:3px}
+.chip img{width:15px;height:15px}
+
+/* rivals */
+.rivals{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:6px 8px}
+.rlabel{font-size:9px;color:var(--ink-soft);grid-column:1/-1;margin:-2px 0 2px;font-weight:bold}
+.rival{background:var(--cream);border:3px solid var(--frameW);border-radius:5px;padding:5px;cursor:pointer;box-shadow:0 2px 0 #0003}
+.rival.dead{opacity:.55;filter:grayscale(.9)}
+.rtop{display:flex;align-items:center;gap:5px}.rlogo{width:22px;height:22px;image-rendering:pixelated;flex:none}
+.rival .rn{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:bold;color:var(--ink)}
+.rival .rb{height:9px;border:2px solid #8a5a12;border-radius:3px;background:#e9d3a0;margin-top:4px;overflow:hidden}
+.rival .rb>i{display:block;height:100%;background:linear-gradient(var(--good),#2f7d3e);transition:width .5s}
+.rival .rdead{font-size:9px;color:var(--bad);font-weight:bold;margin-top:4px}
+
+/* cases */
+.cases{padding:6px 10px}
+.clabel{font-size:10px;color:var(--ink-soft);font-weight:bold;margin-bottom:4px}
+.cscroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
+.ccard{flex:none;width:78px;background:var(--cream);border:2px solid var(--frameW);border-radius:6px;padding:4px;cursor:pointer;box-shadow:0 2px 0 #0003;position:relative}
+.ccard img{width:100%;height:34px;object-fit:contain;image-rendering:pixelated}
+.ccard .cnm{font-size:9px;font-weight:bold;color:var(--ink);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.ccard .clight{position:absolute;top:3px;right:3px;width:11px;height:11px;border-radius:50%;border:2px solid #0006}
+.lg{background:#3a9d4e}.ly{background:#f0b429}.lr{background:#d23b32}
+.ccard .ctype{font-size:8px;color:var(--ink-soft)}
+
+/* ticker + stage */
+.ticker{padding:6px 10px;font-size:11px;color:var(--ink);display:flex;align-items:center;gap:4px;min-height:30px}
+.ticker b{color:var(--coral)}
+.stage{flex:1;min-height:200px;position:relative;overflow:hidden;padding:0;border-radius:7px}
+.office{position:absolute;inset:0;background-size:cover;background-position:center bottom;image-rendering:pixelated}
+.logbtn{position:absolute;top:8px;right:8px;z-index:6;font-size:10px;color:#fff4d8;background:linear-gradient(#a9772f,#8a5a1e);border:3px solid #4f3418;border-radius:5px;padding:5px 8px;cursor:pointer;font-weight:bold}
+.team{position:absolute;left:0;right:0;bottom:6%;display:flex;align-items:flex-end;justify-content:space-around;padding:0 4px;z-index:2}
+.team .emp{position:relative;cursor:pointer;filter:drop-shadow(3px 4px 0 #0004)}
+.team .emp img{height:120px;display:block}
+.team .emp.none{opacity:.35;filter:grayscale(.9) drop-shadow(3px 4px 0 #0004)}
+.team .emp .plate{position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);font-size:9px;background:linear-gradient(#a9772f,#8a5a1e);color:#fff4d8;border:2px solid #4f3418;border-radius:3px;padding:1px 7px;white-space:nowrap;font-weight:bold;box-shadow:0 1px 0 #0004}
+.team .emp .badge{position:absolute;top:-6px;right:-6px;min-width:22px;height:22px;background:linear-gradient(#ff8a5a,#e0532e);color:#fff;border:2px solid #8a2a12;border-radius:12px;font-size:11px;font-weight:bold;display:flex;align-items:center;justify-content:center;padding:0 4px;box-shadow:0 1px 0 #0004;z-index:3}
+@media(min-height:720px){.team .emp img{height:150px}}
+@media(min-width:760px){.team .emp img{height:170px}}
+
+/* 事件卡 */
+.scrim2{position:absolute;inset:0;background:#3a250fbb;display:none;align-items:center;justify-content:center;z-index:12;padding:10px}
+.scrim2.on{display:flex}
+.card{width:min(94%,420px);max-height:96%;overflow:auto;background:var(--paper);border:5px solid var(--frameW);border-radius:8px;box-shadow:0 4px 0 #0005,inset 0 0 0 2px #fff7e0;animation:draw .28s cubic-bezier(.2,1.3,.4,1)}
+@keyframes draw{from{transform:translateY(30px) scale(.9) rotate(-2deg);opacity:0}to{transform:none;opacity:1}}
+.cart{height:180px;background:linear-gradient(#c9a06a,#b0894f);border-bottom:4px solid var(--frameW);display:flex;align-items:flex-end;justify-content:center;position:relative;overflow:hidden}
+.cart::before{content:"";position:absolute;inset:0;background:linear-gradient(#bfe8ff88,#0000 55%);opacity:.6}
+.evtart{height:100%;width:auto;max-width:96%;object-fit:contain;position:relative}
+.cart img.spr{height:172px;filter:drop-shadow(2px 3px 0 #0004);position:relative}
+.cart .emoji{font-size:60px;padding-bottom:18px;position:relative}
+.ctag{position:absolute;top:8px;left:8px;font-size:9px;background:var(--coral);color:#fff;padding:2px 7px;border-radius:3px;font-weight:bold;z-index:2}
+.card.good .ctag{background:var(--good)}.card.news .ctag{background:var(--navy)}
+.cbody{padding:12px 14px 14px}.card h3{margin:0 0 6px;font-size:16px;color:#9a3a12}
+.card.good h3{color:#2f7d3e}.card.news h3{color:var(--navy)}
+.card p{margin:0 0 12px;font-size:13px;color:var(--ink);white-space:pre-line}.kk{font-size:9px;color:#b07a2a}
+.choices{display:flex;flex-direction:column;gap:8px}
+.opt{display:block;text-align:left;padding:11px 12px;background:var(--cream);border:3px solid var(--frameW);border-radius:5px;color:var(--ink);font:inherit;font-size:13px;cursor:pointer;font-weight:bold;box-shadow:0 2px 0 #0003}
+.opt:active{transform:translateY(2px);box-shadow:none}
+.opt:disabled{opacity:.45;cursor:not-allowed}
+.opt small{display:block;color:var(--ink-soft);font-size:10px;margin-top:3px;font-weight:normal}
+.opt.dismiss{background:#e8dbbf;color:var(--ink-soft)}
+.opt.sel{border-color:var(--coral)}
+
+/* LOG 抽屜 */
+.logdraw{position:absolute;inset:0;background:#f3e2beF5;z-index:14;display:none;flex-direction:column;padding:12px}
+.logdraw.on{display:flex}.logdraw h3{margin:0 0 8px;color:#9a3a12;font-size:15px;display:flex;justify-content:space-between}
+.items{flex:1;overflow:auto}.logitem{font-size:12px;padding:7px 8px;border-bottom:2px solid #c9a86a55;color:var(--ink-soft)}
+.logitem b{color:var(--ink)}.logitem .d{color:#b07a2a;font-size:10px}
+
+/* DOCK */
+.dock{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:8px}
+.big{min-height:60px;background:linear-gradient(#f7e8c6,#e6cd97);border:4px solid var(--frameW);border-radius:7px;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:0 3px 0 #0004,inset 0 0 0 2px #fff7e0;font-weight:bold;font:inherit}
+.big:active{transform:translateY(3px);box-shadow:0 0 0 #0004,inset 0 0 0 2px #fff7e0}
+.big:disabled{opacity:.5;cursor:not-allowed}
+.bic{width:30px;height:30px;image-rendering:pixelated}
+.subic{width:26px;height:26px;image-rendering:pixelated;vertical-align:middle;margin-right:6px}.big .tx{font-size:11px}
+.big.hot{background:linear-gradient(#ffd98a,#f0b429);border-color:#8a5a12}
+.big.end{background:linear-gradient(#ffb38a,#e0532e);border-color:#8a2a12;color:#fff}
+
+/* bottom sheet */
+.scrim{position:fixed;inset:0;background:#3a250faa;display:none;align-items:flex-end;justify-content:center;z-index:30}.scrim.on{display:flex}
+.sheet{width:100%;max-width:900px;max-height:86dvh;overflow:auto;background:var(--paper);border:5px solid var(--frameW);border-bottom:none;border-radius:12px 12px 0 0;padding:14px 12px calc(16px + env(safe-area-inset-bottom));box-shadow:inset 0 0 0 2px #fff7e0;animation:up .2s}
+@keyframes up{from{transform:translateY(40px)}to{transform:none}}
+.sheet h3{margin:0 0 3px;font-size:16px;color:#9a3a12}.sheet .sub{margin:0 0 12px;font-size:11px;color:var(--ink-soft)}
+.sheet .x{float:right;background:none;border:none;color:var(--ink-soft);font-size:18px;cursor:pointer}
+.optgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}@media(max-width:420px){.optgrid{grid-template-columns:1fr}}
+.pop{position:fixed;z-index:40;max-width:240px;background:var(--paper);border:4px solid var(--frameW);border-radius:6px;padding:10px;font-size:12px;display:none;box-shadow:0 3px 0 #0005}
+.pop.on{display:block}.pop h4{margin:0 0 5px;color:#9a3a12;font-size:13px}.pop em{color:#a9700f;font-style:normal;font-weight:bold}
+
+/* 名冊 */
+.roster{display:flex;flex-direction:column;gap:7px;max-height:52vh;overflow:auto}
+.remp{display:flex;align-items:center;gap:10px;background:var(--cream);border:3px solid var(--frameW);border-radius:6px;padding:6px 8px;box-shadow:0 2px 0 #0003}
+.remp img{width:44px;height:44px;border-radius:5px;background:#e9d3a0;border:2px solid #8a5a12;flex:none;object-fit:contain}
+.remp .info{flex:1;min-width:0}
+.remp .nm{font-size:13px;font-weight:bold;color:var(--ink)}
+.remp .st{font-size:10px;color:var(--ink-soft)}
+.remp .cap{font-size:11px;color:#a9700f;font-weight:bold;white-space:nowrap}
+.rhint{font-size:11px;color:var(--ink-soft);margin:2px 0 10px}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#3a2513ee;color:#fff4d8;font-size:12px;padding:8px 14px;border-radius:8px;z-index:50;border:2px solid #c9a86a;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%}
+.toast.on{opacity:1}
+
+/* 標題畫面 */
+#titleScreen{position:fixed;inset:0;z-index:100;background:#241a0f center/cover no-repeat;display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:7dvh 16px 9dvh}
+#titleScreen .logo{text-align:center;color:#fff4d8;text-shadow:2px 2px 0 #3a2513,4px 4px 0 #0006}
+#titleScreen .logo .en{font-size:clamp(26px,7vw,44px);font-weight:bold;letter-spacing:.04em;color:var(--gold)}
+#titleScreen .logo .zh{font-size:clamp(18px,5vw,30px);font-weight:bold;margin-top:2px}
+#titleScreen .logo .tag{font-size:11px;color:#e8d0a8;margin-top:8px}
+#startBtn{font:inherit;font-size:18px;font-weight:bold;color:#fff;background:linear-gradient(#ffb38a,#e0532e);border:4px solid #8a2a12;border-radius:10px;padding:14px 46px;cursor:pointer;box-shadow:0 4px 0 #0006;animation:pulse 1.6s infinite}
+#startBtn:active{transform:translateY(3px);box-shadow:0 1px 0 #0006}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.hidden{display:none!important}
+</style></head><body>
+
+<div id="titleScreen">
+  <div class="logo">
+    <div class="en">VENDOR ZOO</div>
+    <div class="zh">乙方動物園</div>
+    <div class="tag">黑色喜劇．IT 外包大逃殺</div>
+  </div>
+  <button id="startBtn">▶ 開始搞事</button>
+</div>
+
+<div class="app hidden" id="app">
+  <div class="topbar">
+    <div class="tb-season"><img class="hicon-sm" id="i_season"><span id="seasonTxt">第 1/15 季</span><span class="mode" id="modeTag"></span></div>
+    <div class="tb-money"><img class="hicon-sm" id="i_coin"><b id="cashTxt">$1,000</b>萬</div>
+  </div>
+  <div class="hud panel">
+    <div class="meters">
+      <div class="meter"><span class="name">行動</span><div class="iconrow" id="apRow"></div></div>
+      <div class="meter"><span class="name">士氣</span><div class="iconrow" id="moraleRow"></div></div>
+      <div class="chip" id="intelChip"><img class="hicon-sm" id="i_audit"><span id="auditTxt">情報:無</span></div>
+    </div>
+  </div>
+
+  <div class="rivals panel">
+    <div class="rlabel">🏴 對手戰況（只見血條，點看簡介）</div>
+    <div id="rivalRow" style="display:contents"></div>
+  </div>
+
+  <div class="cases panel">
+    <div class="clabel">📁 手上的案子 <span id="ccount">(0)</span>　<span style="font-weight:normal;color:var(--ink-soft)">🟢穩 🟡冒煙 🔴快爆　點看詳情</span></div>
+    <div class="cscroll" id="cscroll"></div>
+  </div>
+  <div class="ticker panel" id="tick">📰 <b>業界快訊</b>：……</div>
+  <div class="stage panel" id="stage">
+    <div class="office" id="office"></div>
+    <button class="logbtn" id="logBtn">📜 戰報</button>
+    <div class="team">
+      <div class="emp" id="emp_eng"><span class="badge">×0</span><img id="s_eng"><div class="plate">工程師</div></div>
+      <div class="emp" id="emp_pm"><span class="badge">×0</span><img id="s_pm"><div class="plate">PM</div></div>
+      <div class="emp" id="emp_sales"><span class="badge">×0</span><img id="s_sales"><div class="plate">業務</div></div>
+    </div>
+    <div class="scrim2" id="scrim2"><div class="card" id="cardBox"></div></div>
+    <div class="logdraw" id="logdraw"><h3>📜 戰報 LOG <button id="logClose" style="background:none;border:none;color:var(--ink-soft);font-size:18px;cursor:pointer">✕</button></h3>
+      <div class="items" id="items"></div></div>
+  </div>
+
+  <div class="dock">
+    <button class="big hot" id="d_bid"><img class="bic" id="b_bid"><span class="tx">接案</span></button>
+    <button class="big hot" id="d_mess"><img class="bic" id="b_mess"><span class="tx">搞同行</span></button>
+    <button class="big" id="d_ops"><img class="bic" id="b_ops"><span class="tx">經營</span></button>
+    <button class="big" id="d_hand"><img class="bic" id="b_hand"><span class="tx">手牌</span></button>
+    <button class="big end" id="d_end"><img class="bic" id="b_end"><span class="tx">結束季</span></button>
+  </div>
+</div>
+
+<div class="pop" id="pop"></div>
+<div class="scrim" id="scrim"><div class="sheet" id="sheetBox"></div></div>
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/main.js"></script>
+<script>
+if ("serviceWorker" in navigator) {
+  addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+</script>
+</body></html>
