@@ -32,7 +32,8 @@ export function initChrome() {
   $("b_bid").src = IMG.btn("bid"); $("b_mess").src = IMG.btn("mess");
   $("b_ops").src = IMG.btn("ops"); $("b_hand").src = IMG.btn("hand"); $("b_end").src = IMG.btn("end");
   $("office").style.backgroundImage = `url(${IMG.office})`;
-  $("titleScreen").style.backgroundImage = `url(${IMG.title})`;
+  // 標題圖走 CSS 變數：海報本體與寬螢幕的模糊底共用同一張
+  $("titleScreen").style.setProperty("--titleimg", `url(${IMG.title})`);
 }
 
 // ---- 主渲染（讀 visibleState）----
