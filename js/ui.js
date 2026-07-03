@@ -67,8 +67,8 @@ export function render(v) {
       }).join("")
     : `<div style="font-size:11px;color:var(--ink-soft);padding:8px 2px">（目前手上沒案子——去搶標吧）</div>`;
 
-  // 員工立繪：姿勢跟士氣走（站→坐→orz）
-  const pose = v.morale >= 55 ? "stand" : v.morale >= 25 ? "sit" : "orz";
+  // 員工立繪：預設坐姿（辦公室日常感、比例最穩）；士氣崩到谷底才 orz
+  const pose = v.morale >= 25 ? "sit" : "orz";
   const cnt = { "工程師": 0, PM: 0, "業務": 0 };
   for (const s of v.staff) cnt[s.role] = (cnt[s.role] || 0) + 1;
   for (const [role, elId] of [["工程師", "emp_eng"], ["PM", "emp_pm"], ["業務", "emp_sales"]]) {
@@ -127,13 +127,18 @@ export function card(spec) {
         `<button class="opt ${c.dismiss ? "dismiss" : ""}" data-i="${i}" ${c.disabled ? "disabled" : ""}>${esc(c.label)}${c.sub ? `<small>${esc(c.sub)}</small>` : ""}</button>`
       ).join("") + `</div></div>`;
     $("scrim2").classList.add("on");
+    const settle = (val) => {
+      $("scrim2").classList.remove("on");
+      if (cardSettle === resolve) cardSettle = null;
+      resolve(val);
+    };
     box.querySelectorAll(".opt").forEach((b) => {
-      b.onclick = () => {
-        $("scrim2").classList.remove("on");
-        if (cardSettle === resolve) cardSettle = null;
-        resolve(choices[+b.dataset.i].value);
-      };
+      b.onclick = () => settle(choices[+b.dataset.i].value);
     });
+    // 純告知卡（只有一個選項）點背景也能關，連點事件串更順；決策卡必須點選項
+    $("scrim2").onclick = (e) => {
+      if (e.target === $("scrim2") && choices.length === 1 && !choices[0].disabled) settle(choices[0].value);
+    };
   });
 }
 
@@ -203,18 +208,26 @@ document.addEventListener("click", (e) => {
   if (!e.target.closest(".rival") && !e.target.closest(".pop")) $("pop")?.classList.remove("on");
 });
 
-// ---- 案子詳情 ----
-export function caseDetail(v, id) {
+// ---- 案子詳情（查核撥霧併在這裡：讀數留檔顯示）----
+export function caseDetail(v, id, opts = {}) {
   const c = v.cases.find((x) => x.id === id);
   if (!c) return;
   const L = { green: "🟢 穩定", yellow: "🟡 冒煙中", red: "🔴 快引爆" };
   const note = c.inherited ? "接盤（前朝毒案，風險漲得快）" : c.subcontracted ? "下包" : "自做";
+  const reconLine = c.lastRecon
+    ? `🕵️ 查核讀數（第${c.lastRecon.season}季）：引爆風險 ≈<b style="color:var(--bad)">${c.lastRecon.risk}</b>／滿意度 ≈<b style="color:var(--navy)">${c.lastRecon.sat}</b>${c.lastRecon.season < v.season ? "（舊資料，風險每季都在長）" : ""}`
+    : `風險/滿意度：<b style="color:var(--ink-soft)">隱藏</b>（查核撥霧才看得到數字）`;
   sheet(`<h3><img src="${IMG.caseIco(CASE_ICO[c.atype])}" style="width:40px;height:40px;vertical-align:middle;image-rendering:pixelated"> ${esc(c.name)}</h3>
     <p class="sub">${esc(c.atype)} · ${esc(c.client)} · ${note}${c.lockin ? " · 🔒已綁死" : ""}</p>
     <div style="font-size:13px;line-height:1.9">狀態：<b>${L[c.light]}</b><br>
     案型脾氣：<b style="color:var(--navy)">${esc(ARCH[c.atype].note)}</b><br>
-    風險/滿意度：<b style="color:var(--ink-soft)">隱藏</b>（用「查核」撥霧才看得到數字）<br>
-    可對它：救火降風險 / 話術榨錢或安撫 / 甩鍋卡拆彈</div>`);
+    ${reconLine}<br>
+    可對它：救火降風險 / 話術榨錢或安撫 / 甩鍋卡拆彈</div>
+    ${opts.onRecon ? `<button class="opt" id="reconBtn" style="margin-top:10px" ${opts.reconDisabled ? "disabled" : ""}>🕵️ ${c.lastRecon ? "再查核一次" : "查核撥霧"}<small>$${opts.reconCost}·免行動點·看真實數字（±10 誤差）</small></button>` : ""}`);
+  if (opts.onRecon) {
+    const b = document.getElementById("reconBtn");
+    if (b) b.onclick = () => opts.onRecon(id);
+  }
 }
 
 // ---- 情報面板 ----

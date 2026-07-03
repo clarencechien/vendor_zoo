@@ -253,7 +253,6 @@ const ACTION_CARD = {
   "action.morale": { cls: "good", tag: "經營", title: "發獎金了", emoji: "🍗💰" },
   "sys.hire": { cls: "good", tag: "招募", title: "新血加入", emoji: "🧑‍💼✨" },
   "sys.hire_rescue": { cls: "good", tag: "招募", title: "前員工回鍋救急", emoji: "🙏" },
-  "sys.recon": { tag: "查核", title: "撥開迷霧", emoji: "🕵️" },
   "sys.draw_fumble": { tag: "抽卡", title: "抽卡大失敗", emoji: "🎴☠️" },
   "card.poison": { cls: "good", tag: "手牌", title: "毒模組塞出去了", emoji: "🧪🗡️" },
   "card.lockin": { cls: "good", tag: "手牌", title: "綁架條款生效", emoji: "🔒" },
@@ -267,15 +266,30 @@ const ACTION_CARD = {
   "sys.frontroom_spent": { tag: "手牌·甩鍋", title: "前朝失效", emoji: "🫱🚫" },
 };
 
-// 把一次動作的 events 演成一張結果卡（骰子行 + 旁白行們）
+// 結果分級：例行事務不打斷（toast+戰報），有戲的才出中央卡
+// 出卡條件：擲骰大成功/大失敗、FORCE_CARD 名單、榨錢大進帳(≥150)
+const FORCE_CARD = new Set([
+  "sys.bid_win", "sys.bid_fail",          // 搶標是儀式感動作，成敗都演
+  "action.upsell_fail",                    // 榨錢翻車有笑點
+  "blame.win", "blame.fail", "sys.frontroom_spent", // 甩鍋是賭注
+  "card.poison", "card.lockin", "card.refactor", "card.pr", "card.disaster_cash", // 強卡效果
+  "sys.draw_fumble",
+  "sys.rival_tottering",                   // 對手瀕死=大事
+]);
+
+// 把一次動作的 events 演出：分級決定卡片或 toast；戰報一律留檔
 async function showActionResult(events) {
-  let main = null, lines = [];
+  let main = null, lines = [], useCard = false, toastLine = null;
   for (let i = 0; i < events.length; i++) {
     const e = events[i];
     const text = textFor(e);
     if (text == null) continue;
     logLine(iconFor(e.key), text, `${e.key}·第${e.season}季`);
     lines.push(text);
+    if (e.key === "sys.roll" && (e.vars.crit || e.vars.fumble)) useCard = true;
+    if (FORCE_CARD.has(e.key)) useCard = true;
+    if (e.key === "action.upsell_win" && (e.vars.amount || 0) >= 150) useCard = true;
+    if (e.key !== "sys.roll" && !toastLine) toastLine = text;
     if (!main && ACTION_CARD[e.key]) main = { ...ACTION_CARD[e.key], key: e.key };
     if (e.key === "blame.fail" && events[i + 1]?.key === "blame.sue") {
       i++;
@@ -285,7 +299,11 @@ async function showActionResult(events) {
     }
   }
   if (!lines.length) return;
-  await card({ ...(main || { tag: "行動", title: "結果", emoji: "🎲" }), body: lines.join("\n") });
+  if (useCard) {
+    await card({ ...(main || { tag: "行動", title: "結果", emoji: "🎲" }), body: lines.join("\n") });
+  } else {
+    toast(toastLine || lines[lines.length - 1], 2600);
+  }
 }
 
 // 動作 → 演出 → re-render → 行動點用盡自動進季末
@@ -364,8 +382,7 @@ async function uiOps() {
     { html: `<img class="subic" src="${IMG.btn("bonus")}">發獎金<small>$${CONFIG.morale_cost}·回補士氣（吃1點）</small>`, value: "morale" },
     { html: `<img class="subic" src="${IMG.btn("hire")}">招人<small>工程師/PM/業務（吃1點）</small>`, value: "hire" },
     { html: `<img class="subic" src="${IMG.btn("draw")}">抽強卡<small>$${CONFIG.draw_cost}·即抽即用（吃1點）</small>`, value: "draw" },
-    { html: `<img class="subic" src="${IMG.btn("recon")}">查核撥霧<small>$${CONFIG.recon_cost}·免行動點·看真實數字</small>`, value: "recon" },
-  ]);
+  ]); // 查核撥霧已併入「案子詳情」（點上方案子卡）
   if (!act) return;
   if (act === "talk") {
     if (!v.cases.length) return toast("沒有案子可動嘴。");
@@ -395,11 +412,26 @@ async function uiOps() {
     if (role) doAction(() => actionHire(game, role));
   } else if (act === "draw") {
     doAction(() => actionDraw(game));
-  } else if (act === "recon") {
-    if (!v.cases.length) return toast("沒有案子可查。");
-    const cid = await pickCase(v, `🕵️ 查核哪個案子？（$${CONFIG.recon_cost}·免行動點）`);
-    if (cid) doAction(() => actionRecon(game, cid));
   }
+}
+
+// 案子詳情（含查核撥霧：讀數留檔在詳情裡，$40 免行動點）
+function openCaseDetail(id) {
+  const v = visibleState(game);
+  caseDetail(v, id, {
+    reconCost: CONFIG.recon_cost,
+    reconDisabled: v.cash < CONFIG.recon_cost,
+    onRecon: (cid) => {
+      if (busy) return;
+      const res = actionRecon(game, cid);
+      const entries = takeNewLog();
+      for (const e of entries) logLine(iconFor(e.key), textFor(e), `${e.key}·第${e.season}季`);
+      if (!res.ok) { toast(entries.length ? textFor(entries[0]) : "現在不行。"); return; }
+      render(visibleState(game));
+      openCaseDetail(cid); // 原地刷新，讀數直接出現在詳情裡
+      toast(`🕵️ 查核完成 -$${CONFIG.recon_cost}萬`, 2000);
+    },
+  });
 }
 
 async function uiHand() {
@@ -426,16 +458,21 @@ async function uiHand() {
 
 async function uiEndSeason() {
   if (busy || !endPhase) return;
-  if (document.getElementById("scrim2").classList.contains("on")) return; // 有卡片開著時不疊確認卡
+  if (document.getElementById("scrim2").classList.contains("on")) return; // 有卡片開著時不動作
   const v = visibleState(game);
   if (v.actionsLeft > 0) {
-    const go = await card({
-      tag: "收工", title: `還有 ${v.actionsLeft} 點行動點`, emoji: "🌇",
-      body: "確定提早收工、進入季末結算？（風險會長、帳單會來）",
-      choices: [{ label: "收工結算", value: true }, { label: "再拚一下", value: false, dismiss: true }],
-    });
+    // 玩家主動的確認 → 底部 sheet（中央卡留給「世界對你說話」）
+    const go = await pickSheet(
+      "🌇 收工結算？",
+      `還有 ${v.actionsLeft} 點行動點沒用——季末風險會長、帳單會來`,
+      [
+        { html: `收工，進季末結算<small>風險成長 → 收支 → 引爆/稽核/反撲</small>`, value: true },
+        { html: `再拚一下<small>回到本季行動</small>`, value: false },
+      ]
+    );
     if (!go) return;
   }
+  if (!endPhase) return; // 等確認期間可能已被自動結算搶走
   const r = endPhase; endPhase = null;
   r();
 }
@@ -547,7 +584,7 @@ async function boot() {
   });
   $("cscroll").addEventListener("click", (e) => {
     const el = e.target.closest(".ccard");
-    if (el) caseDetail(visibleState(game), +el.dataset.case);
+    if (el) openCaseDetail(+el.dataset.case);
   });
   $("d_bid").onclick = uiBid;
   $("d_mess").onclick = uiMess;
