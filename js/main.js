@@ -573,10 +573,10 @@ async function boot() {
     });
     // 第二拍：難度（精簡選擇）
     const mode = await card({
-      tag: "旗艦計畫", title: "活下去的兩條路", emoji: "⚔️🦊", body: INTRO_RULES,
+      tag: "旗艦計畫", title: "活下去的兩條路", evt: "difficulty", emoji: "⚔️🦊", body: INTRO_RULES,
       choices: [
-        { label: "練習模式（DEV）", sub: "寬鬆·對手不記私仇·先摸熟系統", value: "DEV" },
-        { label: "真實模式（PRD）", sub: "硬核·對手記仇反撲·贏在鋼索上", value: "PRD" },
+        { label: "🏰 練習模式（DEV）", sub: "寬鬆·對手不記私仇·先摸熟系統", value: "DEV" },
+        { label: "🏯 真實模式（PRD）", sub: "硬核·對手記仇反撲·贏在鋼索上", value: "PRD" },
       ],
     });
     startGame(mode || "DEV");
