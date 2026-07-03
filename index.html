@@ -56,10 +56,10 @@ img{image-rendering:pixelated}
 .cscroll{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px}
 .ccard{flex:none;width:94px;background:var(--cream);border:2px solid var(--frameW);border-radius:6px;padding:4px;cursor:pointer;box-shadow:0 2px 0 #0003;position:relative}
 .ccard img{width:100%;height:38px;object-fit:contain;image-rendering:pixelated}
-.ccard .cnm{font-size:11px;font-weight:bold;color:var(--ink);line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.ccard .cnm{font-size:11px;font-weight:bold;color:var(--ink);line-height:1.2;margin-top:3px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.4em;text-align:center}
 .ccard .clight{position:absolute;top:3px;right:3px;width:13px;height:13px;border-radius:50%;border:2px solid #0006}
 .lg{background:#3a9d4e}.ly{background:#f0b429}.lr{background:#d23b32}
-.ccard .ctype{font-size:10px;color:var(--ink-soft)}
+.ccard .cflag{position:absolute;top:2px;left:2px;font-size:8px;font-weight:bold;color:#fff4d8;background:#8a5a1e;border-radius:3px;padding:0 3px}
 
 /* ticker + stage */
 .ticker{padding:6px 10px;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:4px;min-height:30px}
@@ -193,7 +193,7 @@ img{image-rendering:pixelated}
   </div>
 
   <div class="rivals panel">
-    <div class="rlabel">🏴 對手戰況（只見血條，點看簡介）</div>
+    <div class="rlabel">🏴 對手戰況</div>
     <div id="rivalRow" style="display:contents"></div>
   </div>
 
