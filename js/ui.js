@@ -96,10 +96,20 @@ export function toast(text, ms = 1800) {
   toastTimer = setTimeout(() => t.classList.remove("on"), ms);
 }
 
+// ---- 未決 Promise 保險 ----
+// 任何新 sheet/card 蓋掉舊的時，先把舊的以「取消(null)」結掉。
+// 沒有這層，被蓋掉的 await 永遠不 resolve → busy 旗標卡死 → 全遊戲沒反應。
+let sheetSettle = null; // 進行中的 pickSheet resolver
+let cardSettle = null;  // 進行中的 card resolver
+function settleSheet(val) { if (sheetSettle) { const s = sheetSettle; sheetSettle = null; s(val); } }
+function settleCard(val) { if (cardSettle) { const s = cardSettle; cardSettle = null; s(val); } }
+
 // ---- 事件卡（Promise 化：await 玩家點選）----
 // spec: {cls, tag, evt|spr|emoji, title, key, body, choices:[{label, sub, value, disabled, dismiss}]}
 export function card(spec) {
+  settleCard(null); // 蓋掉前一張未決卡 → 視為取消
   return new Promise((resolve) => {
+    cardSettle = resolve;
     const art = spec.evt
       ? `<img class="evtart" src="${IMG.evt(spec.evt)}">`
       : spec.spr
@@ -119,6 +129,7 @@ export function card(spec) {
     box.querySelectorAll(".opt").forEach((b) => {
       b.onclick = () => {
         $("scrim2").classList.remove("on");
+        if (cardSettle === resolve) cardSettle = null;
         resolve(choices[+b.dataset.i].value);
       };
     });
@@ -127,11 +138,16 @@ export function card(spec) {
 
 // ---- bottom sheet ----
 export function sheet(html) {
+  settleSheet(null); // 蓋掉前一個未決選單 → 視為取消
   $("sheetBox").innerHTML = `<button class="x" id="sheetX">✕</button>` + html;
   $("scrim").classList.add("on");
   $("sheetX").onclick = closeSheet;
+  $("scrim").onclick = (e) => { if (e.target === $("scrim")) closeSheet(); };
 }
-export function closeSheet() { $("scrim").classList.remove("on"); }
+export function closeSheet() {
+  settleSheet(null);
+  $("scrim").classList.remove("on");
+}
 
 // sheet 形式的選擇器（Promise 化，回 null = 取消）
 export function pickSheet(title, sub, options /* [{html, value, disabled}] */) {
@@ -139,8 +155,12 @@ export function pickSheet(title, sub, options /* [{html, value, disabled}] */) {
     sheet(`<h3>${title}</h3><p class="sub">${sub || ""}</p><div class="optgrid" id="pickGrid">` +
       options.map((o, i) => `<button class="opt" data-i="${i}" ${o.disabled ? "disabled" : ""}>${o.html}</button>`).join("") +
       `</div>`);
-    let settled = false;
-    const done = (val) => { if (!settled) { settled = true; closeSheet(); resolve(val); } };
+    sheetSettle = resolve; // sheet() 已把上一個未決者以 null 結掉
+    const done = (val) => {
+      if (sheetSettle === resolve) sheetSettle = null;
+      $("scrim").classList.remove("on");
+      resolve(val);
+    };
     document.querySelectorAll("#pickGrid .opt").forEach((b) => {
       b.onclick = () => done(options[+b.dataset.i].value);
     });
