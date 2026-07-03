@@ -6,7 +6,7 @@ assets_raw
 reference
 docs
 tools
-HANDOFF.md
+content
 README.md
 package.json
 package-lock.json

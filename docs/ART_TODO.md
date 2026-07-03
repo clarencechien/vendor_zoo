@@ -62,8 +62,8 @@
 
 - 開場 intro 卡（🏛️🦊）可用 title_screen 局部或專屬插圖。
 - 引擎打滑錯誤卡（🐞）低優先。
-- 名冊頭像已從立繪自動裁切（`assets_raw/heads/`，tools/fix_assets 之後手動跑
-  裁切段落即可重生）；未來各職位多款立繪到位後改為每人專屬頭像。
+- 名冊頭像由 `tools/fix_assets.mjs` 自動產生（站姿立繪上緣裁 128px 方形 →
+  `assets_raw/heads/`）；未來各職位多款立繪到位後改為每人專屬頭像。
 
 ## 素材品質備忘（tools/fix_assets.mjs 已修）
 

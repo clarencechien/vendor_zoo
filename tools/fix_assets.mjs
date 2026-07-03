@@ -1,10 +1,13 @@
 // ============================================================
-// fix_assets.mjs — 修素材去背問題（就地覆寫 assets_raw，改完跑 optimize_assets.mjs）
+// fix_assets.mjs — 素材入庫守門員（就地覆寫 assets_raw，改完跑 optimize_assets.mjs）
 // 1) 四張結局圖（solo/survive/lose_cash/lose_audit）：假透明棋盤格底 →
 //    邊界 flood-fill 去近白低彩度背景 + 清被包圍的棋盤格內洞 + 邊緣收縮 1px 防白邊
 // 2) 立繪：保留最大連通塊，清掉 AI 生圖殘留的漂浮碎片（如業務坐姿旁的對話框殘片）
+// 3) 名冊頭像：自清理後的站姿立繪上緣裁正方形 → assets_raw/heads/（128px）
+// 冪等：乾淨的圖重跑不受影響。新素材入庫先跑這支再跑 optimize。
 // ============================================================
 import sharp from "sharp";
+import { mkdirSync } from "fs";
 
 const BG_TONE = 226;   // RGB 都高於此
 const BG_CHROMA = 16;  // 且 max-min 低於此 → 視為背景候選（近白低彩度）
@@ -137,5 +140,15 @@ for (const f of [
   "emp_sales_m_stand", "emp_sales_m_sit", "emp_sales_m_orz",
 ]) {
   await keepLargestComponent(`assets_raw/sprites/${f}.png`);
+}
+
+// ---- 名冊頭像：站姿立繪上緣正方形（頭+肩）→ 128px ----
+mkdirSync("assets_raw/heads", { recursive: true });
+for (const [k, f] of Object.entries({ eng: "emp_eng_m_stand", pm: "emp_pm_f_stand", sales: "emp_sales_m_stand" })) {
+  const src = `assets_raw/sprites/${f}.png`;
+  const meta = await sharp(src).metadata();
+  await sharp(src).extract({ left: 0, top: 0, width: meta.width, height: meta.width })
+    .resize(128, 128).png().toFile(`assets_raw/heads/head_${k}.png`);
+  console.log(`assets_raw/heads/head_${k}.png ← ${f} 上緣裁切`);
 }
 console.log("done");
