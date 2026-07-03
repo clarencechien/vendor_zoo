@@ -1,5 +1,6 @@
 // sw.js — Vendor Zoo 離線快取（cache-first 全量預快取）
-const VERSION = "vz-v1";
+// __BUILD__ 由 tools/build.mjs 於打包時蓋成時間戳 → 每次部署自動換快取版本
+const VERSION = "vz-__BUILD__";
 const CORE = [
   ".",
   "index.html",
@@ -56,7 +57,15 @@ const CORE = [
   "assets/sprites/emp_sales_m_stand.webp",
 ];
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(CORE)).then(() => self.skipWaiting()));
+  // cache:"reload" 繞過瀏覽器 HTTP 快取（assets 有一年 immutable header、檔名未版本化，
+  // 不繞過的話新版 sw 會把舊瀏覽器快取重新收編，圖永遠不更新）
+  e.waitUntil(
+    caches.open(VERSION).then((c) =>
+      Promise.all(CORE.map((u) => fetch(u, { cache: "reload" }).then((r) => {
+        if (r.ok) return c.put(u, r);
+      })))
+    ).then(() => self.skipWaiting())
+  );
 });
 self.addEventListener("activate", (e) => {
   e.waitUntil(
