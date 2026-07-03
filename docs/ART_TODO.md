@@ -1,4 +1,12 @@
-# 補圖清單（中央卡目前用 emoji / 立繪佔位的）
+# 補圖清單
+
+> ⚡ **生產流水線與逐張 prompt 已移到 `content/image_prompts.md`**（一張表 + 逐張 prompt +
+> 共用風格錨定）。所有待補卡的 evt 檔位已在 code 預接完成——圖上傳到
+> `assets_raw/events/<檔名>.png` → `fix_assets`(白底才需) → `optimize_assets` 即自動顯示，
+> 不改任何 code。本檔以下為背景說明與歷史紀錄。
+
+---
+
 
 > 產圖規格照 `reference/ASSET_manifest_batch2.md` 的風格聖經（暖色像素、透明去背 PNG、
 > 建議 1536×1024 橫幅或近方形）。產好丟進 `assets_raw/events/`，跑

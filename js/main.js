@@ -130,29 +130,31 @@ const iconFor = (k) =>
 // 這些 key 的卡片由決策 modal 呈現，文字先存起來
 const DEFER = new Set(["season.explode", "event.ransom"]);
 // 這些 key 演成事件卡（大插圖）
+// evt = 事件插圖檔名（assets/events/<evt>.webp）；圖未到位時自動退回 spr/emoji（見 ui.js card()）。
+// 待補圖清單與 prompt 見 content/image_prompts.md，檔名須與此處 evt 一致。
 const CARD_KEYS = {
-  "event.stroke": { tag: "意外事件", title: "工程師過勞倒下", spr: "eng_m_orz" },
-  "event.delrepo": { tag: "意外事件", title: "刪庫跑路", spr: "eng_m_orz" },
-  "event.sales_flee": { tag: "意外事件", title: "業務捲款", spr: "sales_m_orz" },
-  "event.client_bankrupt": { tag: "甲方倒閉", title: "甲方倒了", emoji: "🏚️" },
-  "event.cloud": { tag: "意外事件", title: "雲端大當機", emoji: "☁️💥" },
-  "event.leftpad": { tag: "意外事件", title: "開源套件被刪", emoji: "📦🕳️" },
-  "event.vip_crash": { tag: "長官視察", title: "展示必當機定律", spr: "pm_f_orz" },
-  "event.vip_ok": { cls: "good", tag: "長官視察", title: "奇蹟般沒當機", emoji: "🤝📸" },
-  "event.poached": { tag: "意外事件", title: "王牌被挖角", emoji: "🎣" },
-  "event.media_exposed": { tag: "媒體爆料", title: "黑歷史上頭條", emoji: "📰🔥" },
-  "event.media_clean": { cls: "good", tag: "媒體爆料", title: "查無實據", emoji: "📰🍵" },
+  "event.stroke": { tag: "意外事件", title: "工程師過勞倒下", evt: "evt_stroke", spr: "eng_m_orz" },
+  "event.delrepo": { tag: "意外事件", title: "刪庫跑路", evt: "evt_delrepo", spr: "eng_m_orz" },
+  "event.sales_flee": { tag: "意外事件", title: "業務捲款", evt: "evt_sales_flee", spr: "sales_m_orz" },
+  "event.client_bankrupt": { tag: "甲方倒閉", title: "甲方倒了", evt: "evt_bankrupt", emoji: "🏚️" },
+  "event.cloud": { tag: "意外事件", title: "雲端大當機", evt: "evt_cloud", emoji: "☁️💥" },
+  "event.leftpad": { tag: "意外事件", title: "開源套件被刪", evt: "evt_leftpad", emoji: "📦🕳️" },
+  "event.vip_crash": { tag: "長官視察", title: "展示必當機定律", evt: "evt_vip_crash", spr: "pm_f_orz" },
+  "event.vip_ok": { cls: "good", tag: "長官視察", title: "奇蹟般沒當機", evt: "evt_vip_ok", emoji: "🤝📸" },
+  "event.poached": { tag: "意外事件", title: "王牌被挖角", evt: "evt_poached", emoji: "🎣" },
+  "event.media_exposed": { tag: "媒體爆料", title: "黑歷史上頭條", evt: "evt_media_bad", emoji: "📰🔥" },
+  "event.media_clean": { cls: "good", tag: "媒體爆料", title: "查無實據", evt: "evt_media_ok", emoji: "📰🍵" },
   "event.windfall": { cls: "good", tag: "意外之財", title: "天上掉錢！", evt: "evt_windfall" },
-  "season.terminate": { tag: "季末·解約", title: "甲方終止合約", emoji: "📄🔥" },
+  "season.terminate": { tag: "季末·解約", title: "甲方終止合約", evt: "evt_terminate", emoji: "📄🔥" },
   "audit.clean": { cls: "good", tag: "監理稽核", title: "稽核過關", evt: "evt_audit" },
   "audit.dodged": { cls: "good", tag: "監理稽核", title: "驚險擺平稽核", evt: "evt_audit" },
   "audit.fined": { tag: "監理稽核", title: "稽核重罰", evt: "evt_audit" },
   "rival.collapse": { cls: "good", tag: "對手倒閉", title: "同行倒了！", evt: "evt_rival_down" },
-  "rival.inherit": { tag: "接盤", title: "接下前朝毒案", emoji: "🎁💀" },
-  "blame.win": { cls: "good", tag: "甩鍋", title: "甩鍋成功（延遲帳單）", emoji: "🫱🍳" },
-  "blame.fail": { tag: "甩鍋", title: "甩鍋翻車", emoji: "🫱💥" },
-  "explode.eat": { tag: "季末·引爆", title: "硬扛認賠", emoji: "🧯💸" },
-  "explode.scapegoat": { tag: "季末·引爆", title: "推替死鬼", emoji: "🐐" },
+  "rival.inherit": { tag: "接盤", title: "接下前朝毒案", evt: "evt_inherit", emoji: "🎁💀" },
+  "blame.win": { cls: "good", tag: "甩鍋", title: "甩鍋成功（延遲帳單）", evt: "evt_blame_win", emoji: "🫱🍳" },
+  "blame.fail": { tag: "甩鍋", title: "甩鍋翻車", evt: "evt_blame_fail", emoji: "🫱💥" },
+  "explode.eat": { tag: "季末·引爆", title: "硬扛認賠", evt: "evt_explode_eat", emoji: "🧯💸" },
+  "explode.scapegoat": { tag: "季末·引爆", title: "推替死鬼", evt: "evt_scapegoat", emoji: "🐐" },
 };
 
 function takeNewLog() {
@@ -190,7 +192,7 @@ async function presentNewLog() {
 async function askDecision(req) {
   if (req.decision === "ransom") {
     return card({
-      tag: "意外事件", title: "勒索軟體", emoji: "🔐💾",
+      tag: "意外事件", title: "勒索軟體", evt: "evt_ransom", emoji: "🔐💾",
       key: "event.ransom", body: deferred["event.ransom"] || "",
       choices: [
         { label: `付贖金 $${req.amount}萬`, sub: "花錢消災", value: true },
@@ -213,7 +215,7 @@ async function askDecision(req) {
   }
   if (req.decision === "inherit") {
     return card({
-      tag: "縮圈·接盤", title: "政府塞案上門", emoji: "🏛️📦",
+      tag: "縮圈·接盤", title: "政府塞案上門", evt: "evt_inherit", emoji: "🏛️📦",
       key: "rival.inherit",
       body: `旗艦計畫辦公室：『${req.rival} 留下的案子不能開天窗，就交給貴公司了。』\n這是一個【${req.atype}】前朝毒案——沒文件、沒交接、風險成謎。`,
       choices: [
@@ -246,8 +248,8 @@ async function runFlowUI(gen) {
 // prio 讓「世界級升級」（對手瀕死）壓過觸發它的動作，標頭才不會被埋掉。
 const RESULT = {
   // 搶標：儀式感動作，成敗都出卡
-  "sys.bid_win":        { card: true,  prio: 3, art: { cls: "good", tag: "搶標", title: "得標！", emoji: "📋✨" } },
-  "sys.bid_fail":       { card: true,  prio: 3, art: { tag: "搶標", title: "標飛了", emoji: "📋💨" } },
+  "sys.bid_win":        { card: true,  prio: 3, art: { cls: "good", tag: "搶標", title: "得標！", evt: "act_bid_win", emoji: "📋✨" } },
+  "sys.bid_fail":       { card: true,  prio: 3, art: { tag: "搶標", title: "標飛了", evt: "act_bid_fail", emoji: "📋💨" } },
   // 話術：榨錢大進帳(≥150，見 classifyResult)或翻車出卡，其餘 toast
   "action.upsell_win":  { card: false, prio: 3, art: { cls: "good", tag: "話術·榨錢", title: "榨錢成功", spr: "sales_m_sit" } },
   "action.upsell_stiff":{ card: false, prio: 3, art: { cls: "good", tag: "話術·榨錢", title: "只擠出一點", spr: "sales_m_sit" } },
@@ -256,25 +258,25 @@ const RESULT = {
   "sys.soothe_fail":    { card: false, prio: 3, art: { tag: "話術·安撫", title: "客戶不吃這套", spr: "sales_m_orz" } },
   "action.rescue":      { card: false, prio: 3, art: { cls: "good", tag: "救火", title: "工程師下去救了", spr: "eng_m_sit" } },
   // 搞同行：例行 toast；真把對手打到瀕死才由 sys.rival_tottering 升級
-  "action.mess_report": { card: false, prio: 3, art: { cls: "good", tag: "搞同行", title: "檢舉出手", emoji: "⚖️🗡️" } },
-  "action.mess_rumor":  { card: false, prio: 3, art: { cls: "good", tag: "搞同行", title: "假消息放出去了", emoji: "🐍📢" } },
-  "action.mess_poach":  { card: false, prio: 3, art: { cls: "good", tag: "搞同行", title: "挖角成功", emoji: "🎣" } },
-  "sys.rival_tottering":{ card: true,  prio: 9, art: { cls: "good", tag: "搞同行", title: "對手快撐不住了！", emoji: "💥" } },
-  "action.morale":      { card: false, prio: 3, art: { cls: "good", tag: "經營", title: "發獎金了", emoji: "🍗💰" } },
-  "sys.hire":           { card: false, prio: 3, art: { cls: "good", tag: "招募", title: "新血加入", emoji: "🧑‍💼✨" } },
+  "action.mess_report": { card: false, prio: 3, art: { cls: "good", tag: "搞同行", title: "檢舉出手", evt: "act_mess_report", emoji: "⚖️🗡️" } },
+  "action.mess_rumor":  { card: false, prio: 3, art: { cls: "good", tag: "搞同行", title: "假消息放出去了", evt: "act_mess_rumor", emoji: "🐍📢" } },
+  "action.mess_poach":  { card: false, prio: 3, art: { cls: "good", tag: "搞同行", title: "挖角成功", evt: "act_mess_poach", emoji: "🎣" } },
+  "sys.rival_tottering":{ card: true,  prio: 9, art: { cls: "good", tag: "搞同行", title: "對手快撐不住了！", evt: "act_tottering", emoji: "💥" } },
+  "action.morale":      { card: false, prio: 3, art: { cls: "good", tag: "經營", title: "發獎金了", evt: "act_morale", emoji: "🍗💰" } },
+  "sys.hire":           { card: false, prio: 3, art: { cls: "good", tag: "招募", title: "新血加入", evt: "act_hire", emoji: "🧑‍💼✨" } },
   "sys.hire_rescue":    { card: false, prio: 3, art: { cls: "good", tag: "招募", title: "前員工回鍋救急", emoji: "🙏" } },
-  "sys.draw_fumble":    { card: true,  prio: 3, art: { tag: "抽卡", title: "抽卡大失敗", emoji: "🎴☠️" } },
+  "sys.draw_fumble":    { card: true,  prio: 3, art: { tag: "抽卡", title: "抽卡大失敗", evt: "act_draw_fumble", emoji: "🎴☠️" } },
   // 強卡：效果都有戲，出卡
-  "card.poison":        { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "毒模組塞出去了", emoji: "🧪🗡️" } },
-  "card.lockin":        { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "綁架條款生效", emoji: "🔒" } },
-  "card.refactor":      { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "緊急重構", emoji: "🧼" } },
-  "card.pr":            { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "公關洗白", emoji: "🤝📰" } },
-  "card.disaster_cash": { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "災難變現", emoji: "💰🔥" } },
+  "card.poison":        { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "毒模組塞出去了", evt: "card_poison", emoji: "🧪🗡️" } },
+  "card.lockin":        { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "綁架條款生效", evt: "card_lockin", emoji: "🔒" } },
+  "card.refactor":      { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "緊急重構", evt: "card_refactor", emoji: "🧼" } },
+  "card.pr":            { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "公關洗白", evt: "card_pr", emoji: "🤝📰" } },
+  "card.disaster_cash": { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "災難變現", evt: "card_disaster_cash", emoji: "💰🔥" } },
   "sys.card_junk":      { card: false, prio: 3, art: { cls: "good", tag: "手牌", title: "聊勝於無", emoji: "🍗" } },
   "sys.card_wasted":    { card: false, prio: 3, art: { tag: "手牌", title: "打空了", emoji: "🃏" } },
-  // 甩鍋：賭注，出卡
-  "blame.win":          { card: true,  prio: 3, art: { cls: "good", tag: "手牌·甩鍋", title: "甩鍋成功（延遲帳單）", emoji: "🫱🍳" } },
-  "blame.fail":         { card: true,  prio: 3, art: { tag: "手牌·甩鍋", title: "甩鍋翻車", emoji: "🫱💥" } },
+  // 甩鍋：賭注，出卡（與 CARD_KEYS 的 blame 共用同一張圖）
+  "blame.win":          { card: true,  prio: 3, art: { cls: "good", tag: "手牌·甩鍋", title: "甩鍋成功（延遲帳單）", evt: "evt_blame_win", emoji: "🫱🍳" } },
+  "blame.fail":         { card: true,  prio: 3, art: { tag: "手牌·甩鍋", title: "甩鍋翻車", evt: "evt_blame_fail", emoji: "🫱💥" } },
   "sys.frontroom_spent":{ card: true,  prio: 3, art: { tag: "手牌·甩鍋", title: "前朝失效", emoji: "🫱🚫" } },
 };
 

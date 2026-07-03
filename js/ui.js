@@ -112,11 +112,14 @@ export function card(spec) {
   settleCard(null); // 蓋掉前一張未決卡 → 視為取消
   return new Promise((resolve) => {
     cardSettle = resolve;
-    const art = spec.evt
+    // 卡片門面三層 fallback：evt 事件圖 → spr 立繪 → emoji。
+    // 待補卡可預接 evt，圖未生成時自動退回 spr/emoji，不破圖也不丟現有立繪。
+    const artHtml = spec.evt
       ? `<img class="evtart" src="${IMG.evt(spec.evt)}">`
       : spec.spr
         ? `<img class="spr" src="${IMG.spr(spec.spr)}">`
         : `<span class="emoji">${spec.emoji || "🃏"}</span>`;
+    const art = artHtml;
     const box = $("cardBox");
     box.className = "card " + (spec.cls || "");
     const choices = spec.choices?.length ? spec.choices : [{ label: "確認", dismiss: true, value: null }];
@@ -127,13 +130,24 @@ export function card(spec) {
       choices.map((c, i) =>
         `<button class="opt ${c.dismiss ? "dismiss" : ""}" data-i="${i}" ${c.disabled ? "disabled" : ""}>${esc(c.label)}${c.sub ? `<small>${esc(c.sub)}</small>` : ""}</button>`
       ).join("") + `</div></div>`;
-    // 事件圖載入失敗 → 自動退回 emoji（未生成的插圖不會顯示破圖，全 ART_TODO 通用）
-    const artImg = box.querySelector(".cart .evtart");
-    if (artImg) artImg.onerror = () => {
-      const span = document.createElement("span");
-      span.className = "emoji";
-      span.textContent = spec.emoji || "🃏";
-      artImg.replaceWith(span);
+    // evt 圖載入失敗 → 退 spr 立繪；spr 也失敗 → 退 emoji（全 ART_TODO 通用，不破圖）
+    const mkEmoji = () => {
+      const s = document.createElement("span");
+      s.className = "emoji";
+      s.textContent = spec.emoji || "🃏";
+      return s;
+    };
+    const evtImg = box.querySelector(".cart img.evtart");
+    if (evtImg) evtImg.onerror = () => {
+      if (spec.spr) {
+        const sprImg = document.createElement("img");
+        sprImg.className = "spr";
+        sprImg.src = IMG.spr(spec.spr);
+        sprImg.onerror = () => sprImg.replaceWith(mkEmoji());
+        evtImg.replaceWith(sprImg);
+      } else {
+        evtImg.replaceWith(mkEmoji());
+      }
     };
     $("scrim2").classList.add("on");
     const settle = (val) => {
