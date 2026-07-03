@@ -238,71 +238,77 @@ async function runFlowUI(gen) {
 }
 
 // ---------- 玩家動作共用包裝 ----------
-const ACTION_CARD = {
-  "sys.bid_win": { cls: "good", tag: "搶標", title: "得標！", emoji: "📋✨" },
-  "sys.bid_fail": { tag: "搶標", title: "標飛了", emoji: "📋💨" },
-  "action.upsell_win": { cls: "good", tag: "話術·榨錢", title: "榨錢成功", spr: "sales_m_sit" },
-  "action.upsell_stiff": { cls: "good", tag: "話術·榨錢", title: "只擠出一點", spr: "sales_m_sit" },
-  "action.upsell_fail": { tag: "話術·榨錢", title: "被看穿了", spr: "sales_m_orz" },
-  "sys.soothe_win": { cls: "good", tag: "話術·安撫", title: "客戶被哄回來了", spr: "sales_m_sit" },
-  "sys.soothe_fail": { tag: "話術·安撫", title: "客戶不吃這套", spr: "sales_m_orz" },
-  "action.rescue": { cls: "good", tag: "救火", title: "工程師下去救了", spr: "eng_m_sit" },
-  "action.mess_report": { cls: "good", tag: "搞同行", title: "檢舉出手", emoji: "⚖️🗡️" },
-  "action.mess_rumor": { cls: "good", tag: "搞同行", title: "假消息放出去了", emoji: "🐍📢" },
-  "action.mess_poach": { cls: "good", tag: "搞同行", title: "挖角成功", emoji: "🎣" },
-  "action.morale": { cls: "good", tag: "經營", title: "發獎金了", emoji: "🍗💰" },
-  "sys.hire": { cls: "good", tag: "招募", title: "新血加入", emoji: "🧑‍💼✨" },
-  "sys.hire_rescue": { cls: "good", tag: "招募", title: "前員工回鍋救急", emoji: "🙏" },
-  "sys.draw_fumble": { tag: "抽卡", title: "抽卡大失敗", emoji: "🎴☠️" },
-  "card.poison": { cls: "good", tag: "手牌", title: "毒模組塞出去了", emoji: "🧪🗡️" },
-  "card.lockin": { cls: "good", tag: "手牌", title: "綁架條款生效", emoji: "🔒" },
-  "card.refactor": { cls: "good", tag: "手牌", title: "緊急重構", emoji: "🧼" },
-  "card.pr": { cls: "good", tag: "手牌", title: "公關洗白", emoji: "🤝📰" },
-  "card.disaster_cash": { cls: "good", tag: "手牌", title: "災難變現", emoji: "💰🔥" },
-  "sys.card_junk": { cls: "good", tag: "手牌", title: "聊勝於無", emoji: "🍗" },
-  "sys.card_wasted": { tag: "手牌", title: "打空了", emoji: "🃏" },
-  "blame.win": { cls: "good", tag: "手牌·甩鍋", title: "甩鍋成功（延遲帳單）", emoji: "🫱🍳" },
-  "blame.fail": { tag: "手牌·甩鍋", title: "甩鍋翻車", emoji: "🫱💥" },
-  "sys.frontroom_spent": { tag: "手牌·甩鍋", title: "前朝失效", emoji: "🫱🚫" },
+// 結果呈現總表（單一真相源）。每個結果事件一筆：
+//   card  — 這個事件是否要把整次動作結果升級成中央卡（否則預設 toast）
+//   prio  — 一次動作若同時吐多個事件，標頭由 prio 最高者擔任（同分則先出現者）
+//   art   — 當呈現為卡片時的門面（cls/tag/title/emoji|spr）
+// 設計原則：例行結果走 toast（減少點擊稅）；有戲的（成敗儀式、賭注、對手瀕死）升級成卡。
+// prio 讓「世界級升級」（對手瀕死）壓過觸發它的動作，標頭才不會被埋掉。
+const RESULT = {
+  // 搶標：儀式感動作，成敗都出卡
+  "sys.bid_win":        { card: true,  prio: 3, art: { cls: "good", tag: "搶標", title: "得標！", emoji: "📋✨" } },
+  "sys.bid_fail":       { card: true,  prio: 3, art: { tag: "搶標", title: "標飛了", emoji: "📋💨" } },
+  // 話術：榨錢大進帳(≥150，見 classifyResult)或翻車出卡，其餘 toast
+  "action.upsell_win":  { card: false, prio: 3, art: { cls: "good", tag: "話術·榨錢", title: "榨錢成功", spr: "sales_m_sit" } },
+  "action.upsell_stiff":{ card: false, prio: 3, art: { cls: "good", tag: "話術·榨錢", title: "只擠出一點", spr: "sales_m_sit" } },
+  "action.upsell_fail": { card: true,  prio: 3, art: { tag: "話術·榨錢", title: "被看穿了", spr: "sales_m_orz" } },
+  "sys.soothe_win":     { card: false, prio: 3, art: { cls: "good", tag: "話術·安撫", title: "客戶被哄回來了", spr: "sales_m_sit" } },
+  "sys.soothe_fail":    { card: false, prio: 3, art: { tag: "話術·安撫", title: "客戶不吃這套", spr: "sales_m_orz" } },
+  "action.rescue":      { card: false, prio: 3, art: { cls: "good", tag: "救火", title: "工程師下去救了", spr: "eng_m_sit" } },
+  // 搞同行：例行 toast；真把對手打到瀕死才由 sys.rival_tottering 升級
+  "action.mess_report": { card: false, prio: 3, art: { cls: "good", tag: "搞同行", title: "檢舉出手", emoji: "⚖️🗡️" } },
+  "action.mess_rumor":  { card: false, prio: 3, art: { cls: "good", tag: "搞同行", title: "假消息放出去了", emoji: "🐍📢" } },
+  "action.mess_poach":  { card: false, prio: 3, art: { cls: "good", tag: "搞同行", title: "挖角成功", emoji: "🎣" } },
+  "sys.rival_tottering":{ card: true,  prio: 9, art: { cls: "good", tag: "搞同行", title: "對手快撐不住了！", emoji: "💥" } },
+  "action.morale":      { card: false, prio: 3, art: { cls: "good", tag: "經營", title: "發獎金了", emoji: "🍗💰" } },
+  "sys.hire":           { card: false, prio: 3, art: { cls: "good", tag: "招募", title: "新血加入", emoji: "🧑‍💼✨" } },
+  "sys.hire_rescue":    { card: false, prio: 3, art: { cls: "good", tag: "招募", title: "前員工回鍋救急", emoji: "🙏" } },
+  "sys.draw_fumble":    { card: true,  prio: 3, art: { tag: "抽卡", title: "抽卡大失敗", emoji: "🎴☠️" } },
+  // 強卡：效果都有戲，出卡
+  "card.poison":        { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "毒模組塞出去了", emoji: "🧪🗡️" } },
+  "card.lockin":        { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "綁架條款生效", emoji: "🔒" } },
+  "card.refactor":      { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "緊急重構", emoji: "🧼" } },
+  "card.pr":            { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "公關洗白", emoji: "🤝📰" } },
+  "card.disaster_cash": { card: true,  prio: 3, art: { cls: "good", tag: "手牌", title: "災難變現", emoji: "💰🔥" } },
+  "sys.card_junk":      { card: false, prio: 3, art: { cls: "good", tag: "手牌", title: "聊勝於無", emoji: "🍗" } },
+  "sys.card_wasted":    { card: false, prio: 3, art: { tag: "手牌", title: "打空了", emoji: "🃏" } },
+  // 甩鍋：賭注，出卡
+  "blame.win":          { card: true,  prio: 3, art: { cls: "good", tag: "手牌·甩鍋", title: "甩鍋成功（延遲帳單）", emoji: "🫱🍳" } },
+  "blame.fail":         { card: true,  prio: 3, art: { tag: "手牌·甩鍋", title: "甩鍋翻車", emoji: "🫱💥" } },
+  "sys.frontroom_spent":{ card: true,  prio: 3, art: { tag: "手牌·甩鍋", title: "前朝失效", emoji: "🫱🚫" } },
 };
 
-// 結果分級：例行事務不打斷（toast+戰報），有戲的才出中央卡
-// 出卡條件：擲骰大成功/大失敗、FORCE_CARD 名單、榨錢大進帳(≥150)
-const FORCE_CARD = new Set([
-  "sys.bid_win", "sys.bid_fail",          // 搶標是儀式感動作，成敗都演
-  "action.upsell_fail",                    // 榨錢翻車有笑點
-  "blame.win", "blame.fail", "sys.frontroom_spent", // 甩鍋是賭注
-  "card.poison", "card.lockin", "card.refactor", "card.pr", "card.disaster_cash", // 強卡效果
-  "sys.draw_fumble",
-  "sys.rival_tottering",                   // 對手瀕死=大事
-]);
-
-// 把一次動作的 events 演出：分級決定卡片或 toast；戰報一律留檔
-async function showActionResult(events) {
-  let main = null, lines = [], useCard = false, toastLine = null;
-  for (let i = 0; i < events.length; i++) {
-    const e = events[i];
+// 純分類：一次動作的 events → { 是否出卡、標頭 art、每行文字、toast 首選行 }
+// 不碰 DOM。card 升級來自 RESULT.card、擲骰大成功/大失敗、或榨錢大進帳。
+function classifyResult(events) {
+  const lines = [];
+  let useCard = false, headline = null, headPrio = -1, toastLine = null;
+  for (const e of events) {
     const text = textFor(e);
     if (text == null) continue;
-    logLine(iconFor(e.key), text, `${e.key}·第${e.season}季`);
-    lines.push(text);
-    if (e.key === "sys.roll" && (e.vars.crit || e.vars.fumble)) useCard = true;
-    if (FORCE_CARD.has(e.key)) useCard = true;
-    if (e.key === "action.upsell_win" && (e.vars.amount || 0) >= 150) useCard = true;
-    if (e.key !== "sys.roll" && !toastLine) toastLine = text;
-    if (!main && ACTION_CARD[e.key]) main = { ...ACTION_CARD[e.key], key: e.key };
-    if (e.key === "blame.fail" && events[i + 1]?.key === "blame.sue") {
-      i++;
-      const t2 = textFor(events[i]);
-      logLine("⚖️", t2, "blame.sue");
-      lines.push(t2);
-    }
+    lines.push({ key: e.key, season: e.season, text });
+    const meta = RESULT[e.key];
+    if (
+      meta?.card ||
+      (e.key === "sys.roll" && (e.vars.crit || e.vars.fumble)) ||
+      (e.key === "action.upsell_win" && (e.vars.amount || 0) >= 150)
+    ) useCard = true;
+    if (meta?.art && meta.prio > headPrio) { headline = meta.art; headPrio = meta.prio; }
+    if (e.key !== "sys.roll" && toastLine === null) toastLine = text;
   }
+  return { useCard, headline, lines, toastLine };
+}
+
+// 演出：戰報一律留檔；分級決定中央卡或 toast。（blame.sue 是獨立旁白事件，
+// 會自然收進 lines，不需特別 look-ahead。）
+async function showActionResult(events) {
+  const { useCard, headline, lines, toastLine } = classifyResult(events);
   if (!lines.length) return;
+  for (const ln of lines) logLine(iconFor(ln.key), ln.text, `${ln.key}·第${ln.season}季`);
   if (useCard) {
-    await card({ ...(main || { tag: "行動", title: "結果", emoji: "🎲" }), body: lines.join("\n") });
+    await card({ ...(headline || { tag: "行動", title: "結果", emoji: "🎲" }), body: lines.map((l) => l.text).join("\n") });
   } else {
-    toast(toastLine || lines[lines.length - 1], 2600);
+    toast(toastLine ?? lines[lines.length - 1].text, 2600);
   }
 }
 
