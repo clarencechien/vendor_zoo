@@ -41,7 +41,9 @@ export function makeNarrator(random = Math.random) {
       if (x < 0) { chosen = i; break; }
     }
     used.push(chosen);
-    const win = Math.min(cands.length - 1, 4); // 記憶窗
+    // 記憶窗自適應：小池(≤6句)維持 HANDOFF 規格的 min(n-1,4)；
+    // 擴充後的大池(10-14句)放大到 60%，10刷內幾乎不見重複
+    const win = Math.min(cands.length - 1, Math.max(4, Math.floor(cands.length * 0.6)));
     while (used.length > win) used.shift();
     recent.set(key, used);
     return cands[chosen].tpl;
