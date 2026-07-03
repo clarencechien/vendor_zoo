@@ -2,7 +2,12 @@
   "name": "vendor-zoo",
   "private": true,
   "type": "module",
-  "dependencies": {
+  "scripts": {
+    "build": "node tools/build.mjs",
+    "mc": "node tools/montecarlo.mjs 2000",
+    "assets": "node tools/optimize_assets.mjs"
+  },
+  "devDependencies": {
     "sharp": "^0.35.3"
   }
 }

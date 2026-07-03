@@ -31,9 +31,15 @@ python3 tools/py_baseline.py 1000     # Python 基準對照
 
 目標（見 `docs/PARITY_REPORT.md`）：搞事流 DEV ~68% / PRD ~45%，擺爛流 20-35% 且最差。
 
-## 部署（Cloudflare Pages）
+## 部署（Cloudflare Workers/Pages）
 
-1. Cloudflare Dashboard → Workers & Pages → Create → Pages → 連這個 GitHub repo。
-2. Build 設定全留空（純靜態，無建置步驟），輸出目錄 `/`。
-3. `_headers` 已設好快取策略（assets 長快取、sw.js 不快取）。
-4. 完成後全站走 Cloudflare CDN + 自動 HTTPS；手機開網址→「加入主畫面」即像 App。
+⚠ **不要直接以 repo 根目錄當輸出**——Cloudflare 建置會先 `npm install`，把 `node_modules/`
+（含 121MB 的 workerd 二進位）一起上傳就會爆 25MiB 單檔上限。正確設定：
+
+1. Cloudflare Dashboard → Workers & Pages → 連這個 GitHub repo。
+2. **Build command：`npm run build`**（產出乾淨的 `dist/`，約 2.8MB）。
+3. **輸出目錄（Build output / Assets directory）：`dist`**。
+4. `_headers` 會一起進 dist（assets 長快取、sw.js/index 不快取）。
+5. 完成後全站走 Cloudflare CDN + 自動 HTTPS；手機開網址→「加入主畫面」即像 App。
+
+（若走 Workers 靜態資產且堅持以根目錄部署，`.assetsignore` 已列好排除清單當保險。）

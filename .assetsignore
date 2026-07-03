@@ -1,0 +1,13 @@
+# Cloudflare Workers 靜態資產上傳忽略清單（若以 repo 根目錄直接部署時的保險）
+# 正規做法是 build 出 dist/ 再部署，見 README
+node_modules
+assets_raw
+reference
+docs
+tools
+HANDOFF.md
+README.md
+package.json
+package-lock.json
+.gitignore
+.assetsignore
