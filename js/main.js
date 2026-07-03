@@ -546,22 +546,34 @@ async function showEnding() {
   if (again) location.reload();
 }
 
-// ---------- 開機：標題 → intro/難度 → 開局 ----------
-const INTRO = `『政府旗艦計畫』欽點五家軟體龍頭，號稱要一起壯大成國家隊。
-沒人告訴你的真相是——這是一場大逃殺。預算只有一份，龍頭卻有五家。
-你是夾在中間的外包顧問老闆：接肥單、轉下包、賺價差、出事就甩鍋。
+// ---------- 開機：標題 → 開場故事 → 難度 → 開局 ----------
+// 開場拆兩拍：故事卡（沉浸帶入）→ 難度卡（精簡選擇）。
+// 故事卡接 intro 插圖，圖未到位時 card() 自動退回 emoji（見 ui.js）。
+const INTRO_STORY =
+`記者會上，部長把五塊得標壓克力獎牌一字排開。鎂光燈下，你笑得和另外四家一樣燦爛。
+『五強聯手，打造國家級軟體艦隊。』——這句寫在講稿上。
+沒寫進講稿的是：預算只有一份，龍頭卻有五家。
+你是夾在中間的外包顧問老闆——接肥單、轉下包、賺價差、出事就甩鍋。
+散場時，隔壁桌老闆向你舉杯。你也舉杯。你們都清楚，這杯敬的是彼此的葬禮。`;
 
-活下去的方法只有兩種：熬到旗艦計畫結束，或者——把其他四家全搞死。
-檢舉、放假消息、挖角、塞毒模組……看著同行一家家倒下，剩你獨活。`;
+const INTRO_RULES =
+`活下去只有兩條路：熬到第 15 季旗艦計畫結束，或者——把其他四家全搞死，剩你獨活。
+檢舉、放假消息、挖角、塞毒模組……你搞的每一手，帳都記著。`;
 
 async function boot() {
   initChrome();
   $("startBtn").onclick = async () => {
     $("titleScreen").classList.add("hidden");
     $("app").classList.remove("hidden");
+    // 第一拍：開場故事（大插圖，純帶入）
+    await card({
+      tag: "開場", title: "歡迎加入國家隊（笑）",
+      evt: "intro", emoji: "🏛️🦊", body: INTRO_STORY,
+      choices: [{ label: "⏵ 入場", value: "go" }],
+    });
+    // 第二拍：難度（精簡選擇）
     const mode = await card({
-      tag: "旗艦計畫", title: "歡迎加入國家隊（笑）", emoji: "🏛️🦊",
-      body: INTRO,
+      tag: "旗艦計畫", title: "活下去的兩條路", emoji: "⚔️🦊", body: INTRO_RULES,
       choices: [
         { label: "練習模式（DEV）", sub: "寬鬆·對手不記私仇·先摸熟系統", value: "DEV" },
         { label: "真實模式（PRD）", sub: "硬核·對手記仇反撲·贏在鋼索上", value: "PRD" },

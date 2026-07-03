@@ -127,6 +127,14 @@ export function card(spec) {
       choices.map((c, i) =>
         `<button class="opt ${c.dismiss ? "dismiss" : ""}" data-i="${i}" ${c.disabled ? "disabled" : ""}>${esc(c.label)}${c.sub ? `<small>${esc(c.sub)}</small>` : ""}</button>`
       ).join("") + `</div></div>`;
+    // 事件圖載入失敗 → 自動退回 emoji（未生成的插圖不會顯示破圖，全 ART_TODO 通用）
+    const artImg = box.querySelector(".cart .evtart");
+    if (artImg) artImg.onerror = () => {
+      const span = document.createElement("span");
+      span.className = "emoji";
+      span.textContent = spec.emoji || "🃏";
+      artImg.replaceWith(span);
+    };
     $("scrim2").classList.add("on");
     const settle = (val) => {
       $("scrim2").classList.remove("on");
