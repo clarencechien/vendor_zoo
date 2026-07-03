@@ -12,6 +12,7 @@ export const IMG = {
   office: A + "backgrounds/office_bg.webp",
   title: A + "backgrounds/title_screen.webp",
   spr: (k) => A + `sprites/emp_${k}.webp`,
+  head: (k) => A + `heads/head_${k}.webp`, // 名冊頭像（自立繪上緣裁切）
   rival: (k) => A + `rivals/rival_logo_${k}.webp`,
   caseIco: (k) => A + `cases/case_${k}.webp`,
   hud: (k) => A + `hud/hud_${k}.webp`,
@@ -245,11 +246,12 @@ const BG = ["#e9d3a0", "#f0d7b0", "#dfe6c8", "#e8d0c8", "#d6e2e6", "#efd9e0", "#
 const HUES = [0, -18, 20, -32, 38, 12, -10, 28];
 const BRI = [1, 0.94, 1.06, 0.9, 1.03];
 const CAP = { "工程師": "每人可救火／扛技術債", PM: "每人可扛 2 個案子", "業務": "每人可搶標／話術" };
+const ROLE_HEAD = { "工程師": "eng", PM: "pm", "業務": "sales" };
 export function rosterSheet(v, role) {
   const list = v.staff.filter((s) => s.role === role);
   const rows = list.map((e, i) => {
     const k = i + (e.name ? e.name.charCodeAt(0) : 0);
-    return `<div class="remp"><img src="${IMG.spr(ROLE_SPR[role] + "_stand")}" style="background:${BG[k % BG.length]};filter:hue-rotate(${HUES[k % HUES.length]}deg) saturate(1.08) brightness(${BRI[k % BRI.length]})"><div class="info"><div class="nm">${esc(e.name)}</div><div class="st">${"★".repeat(e.stat)}${"☆".repeat(5 - e.stat)}</div></div><div class="cap">能力 ${e.stat}</div></div>`;
+    return `<div class="remp"><img src="${IMG.head(ROLE_HEAD[role])}" style="background:${BG[k % BG.length]};filter:hue-rotate(${HUES[k % HUES.length]}deg) saturate(1.08) brightness(${BRI[k % BRI.length]})"><div class="info"><div class="nm">${esc(e.name)}</div><div class="st">${"★".repeat(e.stat)}${"☆".repeat(5 - e.stat)}</div></div><div class="cap">能力 ${e.stat}</div></div>`;
   }).join("");
   sheet(`<h3>${role} <span style="font-size:12px;color:var(--ink-soft)">共 ${list.length} 人</span></h3>
     <div class="rhint">${CAP[role]}　·　點「經營→招人」可增員</div>
