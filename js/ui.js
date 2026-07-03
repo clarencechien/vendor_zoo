@@ -66,7 +66,7 @@ export function render(v) {
         const note = c.inherited ? "接盤" : c.subcontracted ? "下包" : "自做";
         return `<div class="ccard" data-case="${c.id}"><span class="clight ${L[c.light]}"></span><img src="${IMG.caseIco(CASE_ICO[c.atype])}"><div class="cnm">${esc(c.name)}${c.lockin ? "🔒" : ""}</div><div class="ctype">${esc(c.atype)}·${note}</div></div>`;
       }).join("")
-    : `<div style="font-size:11px;color:var(--ink-soft);padding:8px 2px">（目前手上沒案子——去搶標吧）</div>`;
+    : `<div style="font-size:13px;color:var(--ink-soft);padding:8px 2px">（目前手上沒案子——去搶標吧）</div>`;
 
   // 員工立繪：預設坐姿（辦公室日常感、比例最穩）；士氣崩到谷底才 orz
   const pose = v.morale >= 25 ? "sit" : "orz";
@@ -199,7 +199,7 @@ export function rivalPop(ev, v, idx) {
   const r = v.rivals[idx];
   const p = $("pop");
   const hp = r.alive ? `戰力約 <em>${r.hpBar}%</em>（只見血條）` : `<em>已倒閉</em>`;
-  p.innerHTML = `<h4 style="display:flex;align-items:center;gap:6px"><img src="${IMG.rival(RIVAL_LOGO_KEY[r.name])}" style="width:26px;height:26px">${esc(r.name)}</h4><div>${esc(RIVAL_INTRO[r.name] || "")}</div><div style="margin-top:6px;font-size:10px;color:var(--ink-soft)">${hp}</div>`;
+  p.innerHTML = `<h4 style="display:flex;align-items:center;gap:6px"><img src="${IMG.rival(RIVAL_LOGO_KEY[r.name])}" style="width:26px;height:26px">${esc(r.name)}</h4><div>${esc(RIVAL_INTRO[r.name] || "")}</div><div style="margin-top:6px;font-size:12px;color:var(--ink-soft)">${hp}</div>`;
   const c = ev.currentTarget.getBoundingClientRect();
   p.style.left = Math.min(c.left, innerWidth - 250) + "px";
   p.style.top = c.bottom + 6 + "px";
@@ -220,7 +220,7 @@ export function caseDetail(v, id, opts = {}) {
     : `風險/滿意度：<b style="color:var(--ink-soft)">隱藏</b>（查核撥霧才看得到數字）`;
   sheet(`<h3><img src="${IMG.caseIco(CASE_ICO[c.atype])}" style="width:40px;height:40px;vertical-align:middle;image-rendering:pixelated"> ${esc(c.name)}</h3>
     <p class="sub">${esc(c.atype)} · ${esc(c.client)} · ${note}${c.lockin ? " · 🔒已綁死" : ""}</p>
-    <div style="font-size:13px;line-height:1.9">狀態：<b>${L[c.light]}</b><br>
+    <div style="font-size:15px;line-height:1.9">狀態：<b>${L[c.light]}</b><br>
     案型脾氣：<b style="color:var(--navy)">${esc(ARCH[c.atype].note)}</b><br>
     ${reconLine}<br>
     可對它：救火降風險 / 話術榨錢或安撫 / 甩鍋卡拆彈</div>
@@ -235,7 +235,7 @@ export function caseDetail(v, id, opts = {}) {
 export function intelPanel(v) {
   const smoky = v.cases.filter((c) => c.light !== "green").length;
   sheet(`<h3>情報面板</h3><p class="sub">只給感覺不給數字</p>
-    <div style="font-size:13px;line-height:1.9">⚖️ 稽核風聲：<b style="color:var(--coral)">${esc(v.auditWind)}</b><br>
+    <div style="font-size:15px;line-height:1.9">⚖️ 稽核風聲：<b style="color:var(--coral)">${esc(v.auditWind)}</b><br>
     📉 信譽：<b style="color:var(--navy)">${esc(v.repFeel)}</b>${v.repFeel === "尚可" ? "，甩鍋還唬得動" : "，甩鍋越來越難唬"}<br>
     🕳️ 有 <b style="color:var(--bad)">${smoky}</b> 張案子在冒煙，記得查核<br>
     🎴 本季已出牌 ${v.cardsPlayed}/${v.cardsPerSeason}</div>`);
@@ -253,7 +253,7 @@ export function rosterSheet(v, role) {
     const k = i + (e.name ? e.name.charCodeAt(0) : 0);
     return `<div class="remp"><img src="${IMG.head(ROLE_HEAD[role])}" style="background:${BG[k % BG.length]};filter:hue-rotate(${HUES[k % HUES.length]}deg) saturate(1.08) brightness(${BRI[k % BRI.length]})"><div class="info"><div class="nm">${esc(e.name)}</div><div class="st">${"★".repeat(e.stat)}${"☆".repeat(5 - e.stat)}</div></div><div class="cap">能力 ${e.stat}</div></div>`;
   }).join("");
-  sheet(`<h3>${role} <span style="font-size:12px;color:var(--ink-soft)">共 ${list.length} 人</span></h3>
+  sheet(`<h3>${role} <span style="font-size:13px;color:var(--ink-soft)">共 ${list.length} 人</span></h3>
     <div class="rhint">${CAP[role]}　·　點「經營→招人」可增員</div>
-    <div class="roster">${rows || '<div style="font-size:12px;color:var(--ink-soft)">（一個都沒有……）</div>'}</div>`);
+    <div class="roster">${rows || '<div style="font-size:13.5px;color:var(--ink-soft)">（一個都沒有……）</div>'}</div>`);
 }
