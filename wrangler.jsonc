@@ -1,0 +1,12 @@
+// Cloudflare Workers 設定：純靜態資產 Worker（無後端 script）
+// 資產目錄寫死 dist/ —— 部署前必須先 `npm run build`
+// Workers Builds 設定：Build command = npm run build（Deploy 用預設 npx wrangler deploy）
+{
+  "name": "vendor-zoo",
+  "compatibility_date": "2026-07-03",
+  "assets": {
+    "directory": "./dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "single-page-application"
+  }
+}

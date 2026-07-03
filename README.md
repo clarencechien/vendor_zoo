@@ -31,15 +31,19 @@ python3 tools/py_baseline.py 1000     # Python 基準對照
 
 目標（見 `docs/PARITY_REPORT.md`）：搞事流 DEV ~68% / PRD ~45%，擺爛流 20-35% 且最差。
 
-## 部署（Cloudflare Workers/Pages）
+## 部署（Cloudflare Workers Builds）
 
-⚠ **不要直接以 repo 根目錄當輸出**——Cloudflare 建置會先 `npm install`，把 `node_modules/`
-（含 121MB 的 workerd 二進位）一起上傳就會爆 25MiB 單檔上限。正確設定：
+資產目錄由版控內的 **`wrangler.jsonc`** 寫死為 `dist/`（純靜態資產 Worker），
+不依賴 GUI 設定——Workers 流程的 GUI 沒有輸出目錄欄位，沒有設定檔時它會
+fallback 把整個 repo 根目錄（含 `.git/`、建置時裝出的 `node_modules/`）當資產上傳，
+直接爆 25MiB 單檔上限。
 
 1. Cloudflare Dashboard → Workers & Pages → 連這個 GitHub repo。
-2. **Build command：`npm run build`**（產出乾淨的 `dist/`，約 2.8MB）。
-3. **輸出目錄（Build output / Assets directory）：`dist`**。
+2. 該 Worker → Settings → **Build → Build command：`npm run build`**（產出 `dist/`，約 2.8MB）。
+3. Deploy command 留預設（`npx wrangler deploy`，會讀 `wrangler.jsonc` → 只上傳 `dist/`）。
 4. `_headers` 會一起進 dist（assets 長快取、sw.js/index 不快取）。
 5. 完成後全站走 Cloudflare CDN + 自動 HTTPS；手機開網址→「加入主畫面」即像 App。
 
-（若走 Workers 靜態資產且堅持以根目錄部署，`.assetsignore` 已列好排除清單當保險。）
+本機驗證部署包：`npm run build && npx wrangler deploy --dry-run`。
+（若改走 Pages 流程：Build command 同上、Build output directory 填 `dist` 即可；
+`.assetsignore` 是根目錄誤部署時的最後保險。）
